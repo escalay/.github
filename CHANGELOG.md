@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/escalay/.github/compare/v1.0.0...v1.0.1) (2026-11-13)
+
+
+### Fixed
+
+* **workflows:** skip a dependabot.yml the also folder doesn't have ([8902d02](https://github.com/escalay/.github/commit/8902d0263090554928ec3765c8e2eb1d5bc9ec0b))
+
 ## 1.0.0 (2026-11-13)
 
 

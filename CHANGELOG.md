@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/escalay/.github/compare/v1.0.1...v1.0.2) (2026-11-13)
+
+
+### Documentation
+
+* the examples pin the latest release, not v1.0.0 ([d50c950](https://github.com/escalay/.github/commit/d50c9504399ce91969bb0a917dbbd86b9d6b34a8))
+
 ## [1.0.1](https://github.com/escalay/.github/compare/v1.0.0...v1.0.1) (2026-11-13)
 
 

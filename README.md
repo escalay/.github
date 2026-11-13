@@ -21,23 +21,24 @@ permissions:
 
 jobs:
   workflows:
-    uses: escalay/.github/.github/workflows/workflows.yml@<sha> # v1.0.0
+    uses: escalay/.github/.github/workflows/workflows.yml@<sha> # vX.Y.Z
   secrets:
-    uses: escalay/.github/.github/workflows/secrets.yml@<sha> # v1.0.0
+    uses: escalay/.github/.github/workflows/secrets.yml@<sha> # vX.Y.Z
   title:
     if: github.event_name == 'pull_request'
-    uses: escalay/.github/.github/workflows/title.yml@<sha> # v1.0.0
+    uses: escalay/.github/.github/workflows/title.yml@<sha> # vX.Y.Z
   # Only with a release workflow that dispatches CI on its release pull request
   dispatched:
     if: github.event_name == 'workflow_dispatch'
     needs: [workflows, secrets] # and every other job that must pass
     permissions:
       statuses: write
-    uses: escalay/.github/.github/workflows/required-statuses.yml@<sha> # v1.0.0
+    uses: escalay/.github/.github/workflows/required-statuses.yml@<sha> # vX.Y.Z
 ```
 
-The commit of a version: `gh api repos/escalay/.github/git/ref/tags/v1.0.0 --jq .object.sha` (a tag object's
-`.object.sha` needs one more `gh api repos/escalay/.github/git/tags/<sha> --jq .object.sha`).
+Pin the latest release by its commit, its version in the comment (Dependabot's `github-actions` updates move both):
+`v=$(gh release view -R escalay/.github --json tagName -q .tagName); gh api repos/escalay/.github/commits/$v --jq .sha`
+gives the commit of `$v`.
 
 ## Check names
 

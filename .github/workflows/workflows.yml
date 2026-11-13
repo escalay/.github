@@ -35,8 +35,9 @@ jobs:
               echo "::error::\"$dir\" (from the also input) is not a folder in this repository."
               exit 1
             fi
-            workflows+=("$dir"/workflows/*.yml "$dir"/workflows/*.yaml)
-            dependabot+=("$dir"/dependabot.yml "$dir"/dependabot.yaml)
+            # Globs, so a file that isn't there drops out (nullglob)
+            workflows+=("$dir"/workflows/*.y*ml)
+            dependabot+=("$dir"/dependabot.y*ml)
           done
           echo "workflows=${workflows[*]}" >> "$GITHUB_OUTPUT"
           echo "dependabot=${dependabot[*]}" >> "$GITHUB_OUTPUT"

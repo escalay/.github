@@ -1,0 +1,5 @@
+# The self-repository form (`uses: $/...`) would be better, but actionlint 1.7.12 rejects it
+# (rhysd/actionlint#711); back to it once actionlint reads it.
+rules:
+  self-repository:
+    disable: true

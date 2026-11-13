@@ -1,0 +1,41 @@
+# release-please keeps a release pull request open from the Conventional Commits on main; merging it tags the version
+# (vX.Y.Z) and publishes the GitHub release that callers pin. Nothing is published anywhere else.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      # To start CI on the release pull request
+      actions: write
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      # A pull request opened with the workflow's own token starts no workflow, so its required checks would never
+      # report; a dispatch is the exception, so CI is started on the release branch by hand
+      # The pull request is read with jq, not fromJSON: a step's env is evaluated even when its `if` skips it
+      - name: Run CI on the release pull request
+        if: steps.release.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.release.outputs.pr }}
+        run: |
+          BRANCH="$(echo "$PR" | jq -r .headBranchName)"
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"

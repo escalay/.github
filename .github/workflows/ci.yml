@@ -1,0 +1,36 @@
+# This repository through its own workflows: its workflows linted, a secrets scan, and on pull requests the title.
+# release.yml starts it on the release pull request; the last job then reports the required checks as statuses.
+name: CI
+
+on:
+  pull_request:
+    # `edited` too: a changed title is checked again
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  workflows:
+    uses: ./.github/workflows/workflows.yml
+
+  secrets:
+    uses: ./.github/workflows/secrets.yml
+
+  title:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/title.yml
+
+  dispatched:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [workflows, secrets]
+    permissions:
+      statuses: write
+    uses: ./.github/workflows/required-statuses.yml

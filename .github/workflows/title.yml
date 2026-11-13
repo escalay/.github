@@ -1,0 +1,33 @@
+# The pull request's title is a Conventional Commit: squash-merged, it becomes the commit on main and a line in the
+# release notes. Call it from a pull_request event (with `edited` among its types, so a changed title is checked).
+name: Title
+
+on:
+  workflow_call:
+    inputs:
+      types:
+        description: The types a title may start with, separated by |
+        type: string
+        default: feat|fix|perf|docs|refactor|chore|test|build|ci|revert
+
+permissions: {}
+
+jobs:
+  conventional:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: The pull request title is a Conventional Commit
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+          TYPES: ${{ inputs.types }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ] && [ "$GITHUB_EVENT_NAME" != pull_request_target ]; then
+            echo "::error::The title check reads a pull request, but this run was started by $GITHUB_EVENT_NAME. Call it only on pull requests."
+            exit 1
+          fi
+          pattern="^($TYPES)(\([a-z0-9./-]+\))?!?: [^ ].*\$"
+          if ! printf '%s' "$TITLE" | grep -Eq "$pattern"; then
+            echo "::error::The title \"$TITLE\" is not a Conventional Commit. Write it as type(scope): summary, for example \"feat: add notes\" or \"fix(notes): keep the order\". Types: ${TYPES//|/, }."
+            exit 1
+          fi

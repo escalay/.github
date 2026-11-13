@@ -1,0 +1,56 @@
+# The caller's workflows linted: actionlint for mistakes, zizmor for the ways a workflow can be turned against its
+# repository. Both read .github; `also` adds folders laid out like it (a workflows/ folder, perhaps a dependabot.yml),
+# such as the workflows a template ships.
+name: Workflows
+
+on:
+  workflow_call:
+    inputs:
+      also:
+        description: More folders laid out like .github to lint, separated by spaces (e.g. templates/app/github)
+        type: string
+        default: ''
+
+permissions: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: The files under the other folders
+        id: also
+        env:
+          ALSO: ${{ inputs.also }}
+        run: |
+          shopt -s nullglob
+          workflows=() dependabot=()
+          for dir in $ALSO; do
+            if [ ! -d "$dir" ]; then
+              echo "::error::\"$dir\" (from the also input) is not a folder in this repository."
+              exit 1
+            fi
+            workflows+=("$dir"/workflows/*.yml "$dir"/workflows/*.yaml)
+            dependabot+=("$dir"/dependabot.yml "$dir"/dependabot.yaml)
+          done
+          echo "workflows=${workflows[*]}" >> "$GITHUB_OUTPUT"
+          echo "dependabot=${dependabot[*]}" >> "$GITHUB_OUTPUT"
+      - name: actionlint
+        env:
+          WORKFLOWS: ${{ steps.also.outputs.workflows }}
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+          # shellcheck disable=SC2086 # one path per word
+          [ -z "$WORKFLOWS" ] || docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color $WORKFLOWS
+      - name: zizmor
+        env:
+          WORKFLOWS: ${{ steps.also.outputs.workflows }}
+          DEPENDABOT: ${{ steps.also.outputs.dependabot }}
+        run: |
+          # shellcheck disable=SC2086 # one path per word
+          pipx run zizmor==1.32.0 --offline .github $WORKFLOWS $DEPENDABOT

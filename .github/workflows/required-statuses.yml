@@ -1,0 +1,40 @@
+# Sets each check the branch rules require as a successful commit status on the commit that was tested. A run started
+# by a dispatch (a release workflow starts one for the release pull request its own token opened, which starts nothing
+# by itself) reports its checks on the commit, but GitHub does not count them for a pull request; statuses it does.
+# The names are read from the rules at run time, so a renamed check needs no change here. Call it last, from a job
+# that `needs` every job it vouches for, and only on workflow_dispatch.
+name: Required statuses
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: The branch whose rules name the required checks
+        type: string
+        default: main
+
+permissions: {}
+
+jobs:
+  statuses:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      statuses: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ inputs.branch }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          contexts=$(gh api "repos/$GITHUB_REPOSITORY/rules/branches/$BRANCH" --paginate \
+            --jq '.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[].context' | sort -u)
+          if [ -z "$contexts" ]; then
+            echo "::notice::The rules for $BRANCH require no checks: nothing waits for a status."
+            exit 0
+          fi
+          while IFS= read -r context; do
+            gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f state=success -f context="$context" -f description="Passed in a dispatched run" -f target_url="$RUN" >/dev/null
+            echo "set \"$context\" on $GITHUB_SHA"
+          done <<< "$contexts"

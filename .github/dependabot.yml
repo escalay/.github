@@ -1,0 +1,16 @@
+# The actions these workflows use, once a month, for versions out at least a week. Callers' own Dependabot moves
+# their pins of this repository.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']
